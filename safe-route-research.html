@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Safe Route — Research & Data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  :root{
+    --paper:#F3F5EF;
+    --panel:#FFFFFF;
+    --ink:#1B231F;
+    --slate:#5B655F;
+    --line:#DBDFD5;
+    --forest:#1F6D4C;
+    --forest-soft:#E4EFE7;
+    --rust:#B5651D;
+    --rust-soft:#F6E8DA;
+    --teal:#2B6478;
+    --teal-soft:#E2ECEE;
+    --plum:#8B3A62;
+    --plum-soft:#F2E3EB;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  a{ color:inherit; }
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 32px;
+  }
+  @media (max-width:640px){ .wrap{ padding:0 20px; } }
+
+  /* Top strip */
+  .topline{
+    border-bottom:1px solid var(--line);
+    padding:18px 0;
+  }
+  .topline .wrap{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:14px;
+    color:var(--slate);
+  }
+  .topline strong{ color:var(--ink); font-weight:600; }
+
+  /* Hero */
+  .hero{ padding:64px 0 56px; }
+  .hero-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:56px;
+    align-items:center;
+  }
+  @media (max-width:900px){
+    .hero-grid{ grid-template-columns:1fr; gap:36px; }
+  }
+  .hero h1{
+    font-size:clamp(34px,4.4vw,52px);
+    line-height:1.06;
+    max-width:11ch;
+  }
+  .hero p.lede{
+    margin-top:20px;
+    font-size:17px;
+    color:var(--slate);
+    max-width:46ch;
+  }
+  .stat-row{
+    display:flex;
+    gap:28px;
+    margin-top:32px;
+    flex-wrap:wrap;
+  }
+  .stat b{
+    display:block;
+    font-family:'Fraunces', serif;
+    font-size:28px;
+    font-weight:600;
+    color:var(--forest);
+  }
+  .stat span{
+    font-size:13px;
+    color:var(--slate);
+  }
+  #map{
+    height:400px;
+    width:100%;
+    border-radius:6px;
+    border:1px solid var(--line);
+  }
+  .map-caption{
+    font-size:12.5px;
+    color:var(--slate);
+    margin-top:10px;
+  }
+
+  /* Section framing */
+  section{ padding:52px 0; border-top:1px solid var(--line); }
+  .section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+  }
+  .section-head h2{ font-size:26px; }
+  .section-head p{
+    color:var(--slate);
+    font-size:14.5px;
+    max-width:42ch;
+    margin:6px 0 0;
+  }
+
+  /* Survey corridor rows */
+  .corridor{
+    display:grid;
+    grid-template-columns:120px 1fr 90px;
+    gap:20px;
+    align-items:center;
+    padding:16px 0;
+    border-top:1px solid var(--line);
+  }
+  .corridor:first-of-type{ border-top:none; }
+  .corridor .state{ font-weight:600; }
+  .corridor .desc{ color:var(--slate); font-size:14px; }
+  .corridor .n{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--forest);
+    text-align:right;
+  }
+
+  /* Reference library */
+  .ref-category{ margin-bottom:36px; }
+  .ref-category:last-child{ margin-bottom:0; }
+  .cat-label{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-size:15px;
+    font-weight:600;
+    margin-bottom:14px;
+  }
+  .swatch{ width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+  .ref-entry{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:16px;
+    padding:14px 0;
+    border-top:1px solid var(--line);
+    align-items:start;
+  }
+  .ref-category .ref-entry:first-of-type{ border-top:none; }
+  .ref-entry .title{ font-weight:600; font-size:14.5px; }
+  .ref-entry .source{ color:var(--slate); font-size:13px; margin-top:3px; }
+  .ref-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--slate);
+    white-space:nowrap;
+    padding-top:2px;
+  }
+  .lit-note{
+    font-size:13px;
+    color:var(--slate);
+    margin-top:6px;
+    padding:12px 16px;
+    background:var(--panel);
+    border:1px dashed var(--line);
+    border-radius:4px;
+  }
+
+  /* Market context */
+  .market-grid{
+    display:grid;
+    grid-template-columns:1.1fr 1fr;
+    gap:48px;
+  }
+  @media (max-width:900px){ .market-grid{ grid-template-columns:1fr; } }
+  .market-grid p{ color:var(--slate); font-size:14.5px; max-width:48ch; }
+  .bars{
+    display:flex;
+    align-items:flex-end;
+    gap:14px;
+    height:180px;
+    margin-top:8px;
+  }
+  .bar{
+    flex:1;
+    background:var(--forest-soft);
+    border-top:3px solid var(--forest);
+    position:relative;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+  }
+  .bar span{
+    position:absolute;
+    top:-22px;
+    font-size:11.5px;
+    color:var(--slate);
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .bar-labels{
+    display:flex; gap:14px; margin-top:8px;
+  }
+  .bar-labels div{ flex:1; text-align:center; font-size:11.5px; color:var(--slate); }
+  .cagr-chip{
+    display:inline-flex;
+    flex-direction:column;
+    margin-top:22px;
+    padding:14px 18px;
+    background:var(--forest-soft);
+    border-radius:6px;
+  }
+  .cagr-chip b{ font-family:'Fraunces',serif; font-size:24px; color:var(--forest); }
+  .cagr-chip span{ font-size:12.5px; color:var(--slate); }
+
+  footer{
+    border-top:1px solid var(--line);
+    padding:32px 0 48px;
+    font-size:13.5px;
+    color:var(--slate);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  footer a{
+    color:var(--forest);
+    font-weight:600;
+    text-decoration:none;
+    border-bottom:1px solid var(--forest);
+  }
+  footer .links{ display:flex; gap:20px; }
+
+  .leaflet-popup-content{ font-family:'IBM Plex Sans', sans-serif; font-size:13px; }
+  .leaflet-popup-content b{ display:block; margin-bottom:2px; }
+
+  @media (max-width:640px){
+    .corridor{ grid-template-columns:1fr; gap:4px; padding:14px 0; }
+    .corridor .n{ text-align:left; }
+    .ref-entry{ grid-template-columns:1fr; gap:4px; }
+    .topline .wrap{ flex-direction:column; align-items:flex-start; gap:4px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="topline">
+    <div class="wrap">
+      <span><strong>Safe Route</strong> — research &amp; data log</span>
+      <span>HalfStack · SIH 2026</span>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <h1>What the terrain told us</h1>
+        <p class="lede">Before Safe Route routes a single road, it was grounded in field interviews and desk research across the hill corridors of Assam, Meghalaya and Sikkim — where landslides, monsoon washouts and patchy connectivity shape how people actually travel.</p>
+        <div class="stat-row">
+          <div class="stat"><b>150+</b><span>drivers &amp; logistics managers surveyed</span></div>
+          <div class="stat"><b>3</b><span>states covered</span></div>
+          <div class="stat"><b>6 mo.</b><span>Sept 2025 – Feb 2026 field window</span></div>
+        </div>
+      </div>
+      <div>
+        <div id="map"></div>
+        <p class="map-caption">Approximate corridor coverage of the field survey. Map data © OpenStreetMap contributors, via Leaflet.</p>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>The field survey</h2>
+        <p>Our primary dataset: structured interviews with the people who actually drive these routes, run Sept 2025 through Feb 2026.</p>
+      </div>
+      <div class="corridor">
+        <div class="state">Assam</div>
+        <div class="desc">Lower Assam hill-approach roads feeding into Meghalaya — frequent monsoon washouts and long detours cited most often.</div>
+        <div class="n">corridor 01</div>
+      </div>
+      <div class="corridor">
+        <div class="state">Meghalaya</div>
+        <div class="desc">Shillong plateau routes — landslide-prone stretches where drivers report avoiding certain roads entirely after heavy rain.</div>
+        <div class="n">corridor 02</div>
+      </div>
+      <div class="corridor">
+        <div class="state">Sikkim</div>
+        <div class="desc">Gangtok-area mountain roads — steep gradients and narrow single-lane sections drove demand for multicriteria, not just shortest-path, routing.</div>
+        <div class="n">corridor 03</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Literature &amp; references</h2>
+        <p>The desk research behind the routing model, grouped the way our team organised it during the build.</p>
+      </div>
+
+      <div class="ref-category">
+        <div class="cat-label"><span class="swatch" style="background:var(--teal)"></span>Research &amp; frameworks</div>
+        <div class="ref-entry">
+          <div><div class="title">Dynamic Multicriteria Path Planning in High-Hazard Hill Terrains</div><div class="source">IEEE Geospatial / Elsevier, 2024</div></div>
+          <div class="ref-tag">[link]</div>
+        </div>
+        <div class="ref-entry">
+          <div><div class="title">Spatial Vulnerability Indexing for Mountain Road Networks Using PostGIS</div><div class="source">Springer Geo-Informatics, 2025</div></div>
+          <div class="ref-tag">[link]</div>
+        </div>
+      </div>
+
+      <div class="ref-category">
+        <div class="cat-label"><span class="swatch" style="background:var(--forest)"></span>Government policy &amp; regional frameworks</div>
+        <div class="ref-entry">
+          <div><div class="title">PM-DevINE — Prime Minister's Development Initiative for North East Region</div><div class="source">MDoNER, 2022–2026</div></div>
+          <div class="ref-tag">[policy doc]</div>
+        </div>
+        <div class="ref-entry">
+          <div><div class="title">National Logistics Policy &amp; Comprehensive Road Safety Guidelines</div><div class="source">MoRTH, Government of India</div></div>
+          <div class="ref-tag">[gazette]</div>
+        </div>
+      </div>
+
+      <div class="ref-category">
+        <div class="cat-label"><span class="swatch" style="background:var(--rust)"></span>Open source &amp; offline systems</div>
+        <div class="ref-entry">
+          <div><div class="title">Vector Tiles &amp; Offline Heuristic Routing under Intermittent Connectivity</div><div class="source">FOSS4G / ACM SIGSPATIAL, 2024</div></div>
+          <div class="ref-tag">[link]</div>
+        </div>
+        <div class="ref-entry">
+          <div><div class="title">OSRM Contraction Hierarchies for High-Gradient Topography &amp; Elevation Costing</div><div class="source">Project OSRM, 2025</div></div>
+          <div class="ref-tag">[docs]</div>
+        </div>
+      </div>
+
+      <div class="ref-category">
+        <div class="cat-label"><span class="swatch" style="background:var(--plum)"></span>User demand &amp; regional field insights</div>
+        <div class="ref-entry">
+          <div><div class="title">"Hill Logistics Vulnerability in Assam &amp; Meghalaya"</div><div class="source">All India Motor Transport Congress (AIMTC) whitepaper</div></div>
+          <div class="ref-tag">[link]</div>
+        </div>
+        <div class="ref-entry">
+          <div><div class="title">Monsoon Road Washouts &amp; Highway Isolation</div><div class="source">Socio-Economic Survey, North East Studies, 2024</div></div>
+          <div class="ref-tag">[link]</div>
+        </div>
+      </div>
+
+      <p class="lit-note">These citations mirror the reference list from our SIH submission deck. The original placeholders ([link], [policy doc] etc.) didn't carry real URLs, so nothing here is hyperlinked — swap in the actual sources when you have them and this list is ready to publish as-is. Methodology aligned with MDoNER &amp; MoRTH standards.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap market-grid">
+      <div>
+        <h2>Why the timing matters</h2>
+        <p>The market for AI-driven, safety-aware logistics routing is expected to grow steadily through the decade — part of why a hazard-aware router for hill terrain isn't just a hackathon idea.</p>
+        <div class="cagr-chip">
+          <b>12.9% CAGR</b>
+          <span>2024 – 2029, reaching an estimated USD 220.3B market</span>
+        </div>
+      </div>
+      <div>
+        <div class="bars">
+          <div class="bar" style="height:30%"><span>120.5</span></div>
+          <div class="bar" style="height:40%"><span>135.8</span></div>
+          <div class="bar" style="height:51%"><span>153.2</span></div>
+          <div class="bar" style="height:64%"><span>172.9</span></div>
+          <div class="bar" style="height:78%"><span>195.1</span></div>
+          <div class="bar" style="height:95%"><span>220.3</span></div>
+        </div>
+        <div class="bar-labels">
+          <div>2024</div><div>2025</div><div>2026</div><div>2027</div><div>2028</div><div>2029</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap" style="display:flex; justify-content:space-between; width:100%; flex-wrap:wrap; gap:12px;">
+      <span>Safe Route — built by team HalfStack for Smart India Hackathon 2026.</span>
+      <span class="links">
+        <a href="https://github.com/knockknees/Safe-route-project" target="_blank" rel="noopener">Source on GitHub</a>
+        <a href="https://safe-route-project-mnb2.vercel.app/" target="_blank" rel="noopener">Live prototype</a>
+      </span>
+    </div>
+  </footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+  const map = L.map('map', { scrollWheelZoom:false }).setView([26.4, 90.6], 6);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 15,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const corridors = [
+    { name:"Assam corridor", coords:[26.1445, 91.7362], note:"Lower Assam hill-approach roads — monsoon washouts" },
+    { name:"Meghalaya corridor", coords:[25.5788, 91.8933], note:"Shillong plateau — landslide-prone stretches" },
+    { name:"Sikkim corridor", coords:[27.3389, 88.6065], note:"Gangtok mountain roads — steep, narrow gradients" }
+  ];
+
+  corridors.forEach(c => {
+    L.circle(c.coords, { radius: 18000, color:"#B5651D", weight:1, fillColor:"#B5651D", fillOpacity:0.12 }).addTo(map);
+    L.circleMarker(c.coords, { radius:6, color:"#1F6D4C", weight:2, fillColor:"#ffffff", fillOpacity:1 })
+      .addTo(map)
+      .bindPopup(`<b>${c.name}</b>${c.note}`);
+  });
+</script>
+</body>
+</html>
